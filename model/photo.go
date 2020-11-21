@@ -14,9 +14,26 @@ type (
 	}
 )
 
-func (m *Model) InsertPhoto(p *Photo) error {
+func (m *Model) InitPhoto() error {
+	_, err := m.db.Exec(`
+		CREATE TABLE IF NOT EXISTS photo (
+			path TEXT PRIMARY KEY,
+			hash TEXT,
+			phash BIGINT UNSIGNED,
+			timestamp DATETIME
+		);
+		CREATE INDEX photo_hash ON photo (hash);
+		CREATE INDEX photo_phash ON photo (phash);
+	`)
+	if err != nil {
+		return fmt.Errorf("db.Exec: %w", err)
+	}
+	return nil
+}
+
+func (m *Model) UpdatePhoto(p *Photo) error {
 	_, err := m.db.NamedExec(`
-		INSERT INTO photo VALUES (
+		REPLACE INTO photo VALUES (
 			:path,
 			:hash,
 			:phash,
@@ -24,7 +41,7 @@ func (m *Model) InsertPhoto(p *Photo) error {
 		)
 	`, p)
 	if err != nil {
-		return fmt.Errorf("NamedExec: %w", err)
+		return fmt.Errorf("db.NamedExec: %w", err)
 	}
 	return nil
 }
