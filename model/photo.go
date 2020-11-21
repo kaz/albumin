@@ -22,8 +22,8 @@ func (m *Model) InitPhoto() error {
 			phash BIGINT UNSIGNED,
 			timestamp DATETIME
 		);
-		CREATE INDEX photo_hash ON photo (hash);
-		CREATE INDEX photo_phash ON photo (phash);
+		CREATE INDEX IF NOT EXISTS photo_hash ON photo (hash);
+		CREATE INDEX IF NOT EXISTS photo_phash ON photo (phash);
 	`)
 	if err != nil {
 		return fmt.Errorf("db.Exec: %w", err)
