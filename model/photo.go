@@ -8,8 +8,8 @@ import (
 type (
 	Photo struct {
 		Path      string    `db:"path"`
-		Hash      string    `db:"hash"`
-		PHash     string    `db:"phash"`
+		Hash      []byte    `db:"hash"`
+		PHash     []byte    `db:"phash"`
 		Timestamp time.Time `db:"timestamp"`
 	}
 )
@@ -18,8 +18,8 @@ func (m *Model) InitPhoto() error {
 	_, err := m.db.Exec(`
 		CREATE TABLE IF NOT EXISTS photo (
 			path TEXT PRIMARY KEY,
-			hash TEXT,
-			phash TEXT,
+			hash BLOB,
+			phash BLOB,
 			timestamp DATETIME
 		);
 		CREATE INDEX IF NOT EXISTS photo_hash ON photo (hash);

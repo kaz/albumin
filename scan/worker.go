@@ -2,7 +2,7 @@ package scan
 
 import (
 	"crypto/md5"
-	"encoding/hex"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"sync"
@@ -85,23 +85,25 @@ func process(target string) (*model.Photo, []error) {
 	return photo, nil
 }
 
-func calcHash(loader *load.Loader) string {
+func calcHash(loader *load.Loader) []byte {
 	hash := md5.Sum(loader.Bytes())
-	return hex.EncodeToString(hash[:])
+	return hash[:]
 }
 
-func calcPHash(loader *load.Loader) (string, error) {
+func calcPHash(loader *load.Loader) ([]byte, error) {
 	img, err := loader.Image()
 	if err != nil {
-		return "", fmt.Errorf("loader.Image: %w", err)
+		return nil, fmt.Errorf("loader.Image: %w", err)
 	}
 
 	hash, err := goimagehash.PerceptionHash(img)
 	if err != nil {
-		return "", fmt.Errorf("goimagehash.PerceptionHash: %w", err)
+		return nil, fmt.Errorf("goimagehash.PerceptionHash: %w", err)
 	}
 
-	return fmt.Sprintf("%016x", hash.GetHash()), nil
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, hash.GetHash())
+	return buf, nil
 }
 
 func getTimestamp(loader *load.Loader) (time.Time, error) {
