@@ -11,55 +11,55 @@ import (
 )
 
 type (
-	Scanner struct {
-		inCh  chan string
-		outCh chan *model.Photo
-		errCh chan error
+	result struct {
+		target string
+		photo  *model.Photo
+		errs   []error
 	}
 )
 
-func New() *Scanner {
-	return &Scanner{
-		inCh:  make(chan string),
-		outCh: make(chan *model.Photo),
-		errCh: make(chan error),
+func Scan(target string) ([]*model.Photo, error) {
+	ents, err := walk(target)
+	if err != nil {
+		return nil, fmt.Errorf("walk: %w", err)
 	}
-}
-
-func (s *Scanner) Scan(target string) ([]*model.Photo, error) {
-	photos := []*model.Photo{}
-	go func() {
-		for photo := range s.outCh {
-			fmt.Println("OK:", photo.Path)
-			photos = append(photos, photo)
-		}
-	}()
-
-	errs := []error{}
-	go func() {
-		for err := range s.errCh {
-			fmt.Println("NG:", err)
-			errs = append(errs, err)
-		}
-	}()
 
 	wg := &sync.WaitGroup{}
+	reqCh := make(chan string)
+	resCh := make(chan result)
+
 	for i := 0; i < preference.ScanThread; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			s.thread()
+			thread(reqCh, resCh)
 		}()
 	}
 
-	if err := s.scan(target); err != nil {
-		return nil, fmt.Errorf("scan: %w", err)
-	}
-	close(s.inCh)
+	go func() {
+		for _, ent := range ents {
+			reqCh <- ent
+		}
+		close(reqCh)
+		wg.Wait()
+		close(resCh)
+	}()
 
-	wg.Wait()
-	close(s.outCh)
-	close(s.errCh)
+	photos := []*model.Photo{}
+	errs := []error{}
+	for res := range resCh {
+		if res.errs != nil {
+			fmt.Println("error:", res.target)
+			errs = append(errs, res.errs...)
+			continue
+		}
+		if res.photo == nil {
+			fmt.Println("skipped:", res.target)
+			continue
+		}
+		fmt.Println("ok:", res.target)
+		photos = append(photos, res.photo)
+	}
 
 	if len(errs) > 0 {
 		return nil, fmt.Errorf("errors occurred in scanning: %v", errs)
@@ -67,27 +67,31 @@ func (s *Scanner) Scan(target string) ([]*model.Photo, error) {
 	return photos, nil
 }
 
-func (s *Scanner) scan(target string) error {
+func walk(target string) ([]string, error) {
 	ents, err := ioutil.ReadDir(target)
 	if err != nil {
-		return fmt.Errorf("ioutil.ReadDir: %w", err)
+		return nil, fmt.Errorf("ioutil.ReadDir: %w", err)
 	}
 
+	result := []string{}
 	for _, ent := range ents {
 		entPath, err := filepath.Abs(filepath.Join(target, ent.Name()))
 		if err != nil {
-			return fmt.Errorf("filepath.Abs: %w", err)
+			return nil, fmt.Errorf("filepath.Abs: %w", err)
 		}
 
-		if ent.IsDir() {
-			if err := s.scan(entPath); err != nil {
-				return fmt.Errorf("child=%v: %w", ent.Name(), err)
-			}
+		if !ent.IsDir() {
+			result = append(result, entPath)
 			continue
 		}
 
-		s.inCh <- entPath
+		children, err := walk(entPath)
+		if err != nil {
+			return nil, fmt.Errorf("child=%v: %w", ent.Name(), err)
+		}
+
+		result = append(result, children...)
 	}
 
-	return nil
+	return result, nil
 }

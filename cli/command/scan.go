@@ -22,7 +22,7 @@ func (s *Scan) Execute(args []string) error {
 		return fmt.Errorf("InitPhoto: %w", err)
 	}
 
-	ents, err := scan.New().Scan(s.Directory)
+	ents, err := scan.Scan(s.Directory)
 	if err != nil {
 		return fmt.Errorf("Scan: %w", err)
 	}

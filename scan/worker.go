@@ -13,19 +13,14 @@ import (
 	"github.com/kaz/albumin/scan/load"
 )
 
-func (s *Scanner) thread() {
-	for target := range s.inCh {
+func thread(reqCh chan string, resCh chan result) {
+	for target := range reqCh {
 		photo, errs := process(target)
-		if errs != nil {
-			for _, err := range errs {
-				s.errCh <- fmt.Errorf("target=%v: %w", target, err)
-			}
-			continue
+		resCh <- result{
+			target: target,
+			photo:  photo,
+			errs:   errs,
 		}
-		if photo == nil {
-			continue
-		}
-		s.outCh <- photo
 	}
 }
 
