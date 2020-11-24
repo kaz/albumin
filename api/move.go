@@ -11,11 +11,13 @@ import (
 
 type (
 	PostMoveRequest struct {
-		Layout  string
-		Execute bool
+		Strategy string
+		Layout   string
+		Execute  bool
 	}
 	PostMoveResponse struct {
-		Moves []*move.Move
+		Moves    []*move.Move
+		Executed bool
 	}
 )
 
@@ -25,11 +27,27 @@ func PostMove(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("Bind: %w", err))
 	}
 
+	var strategy move.Strategy
+	switch req.Strategy {
+	case "exif":
+		strategy = move.StrategyExif(req.Layout)
+	case "seq":
+		strategy = move.StrategySequential(req.Layout)
+	default:
+		return fmt.Errorf("no such strategy: %v", req.Strategy)
+	}
+
 	photos := c.Get("photos").([]*model.Photo)
-	moves, err := move.Plan(photos, req.Layout)
+	moves, err := move.Plan(photos, strategy)
 	if err != nil {
 		return fmt.Errorf("move.Plan: %w", err)
 	}
 
-	return c.JSON(http.StatusOK, &PostMoveResponse{Moves: moves})
+	if req.Execute {
+		if err := move.Execute(moves); err != nil {
+			return fmt.Errorf("move.Execute: %w", err)
+		}
+	}
+
+	return c.JSON(http.StatusOK, &PostMoveResponse{Moves: moves, Executed: req.Execute})
 }
