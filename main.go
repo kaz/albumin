@@ -15,6 +15,8 @@ func main() {
 	apiGroup := e.Group("/api", api.ContentTypeJSON)
 	apiGroup.GET("/scan/pwd", api.GetScanPwd)
 	apiGroup.POST("/scan", api.PostScan)
+	apiGroup.GET("/dedup/hash", api.GetDedupHash, api.DedupMiddleware)
+	apiGroup.GET("/dedup/phash", api.GetDedupPHash, api.DedupMiddleware)
 
 	e.Logger.Fatal(e.Start(":20000"))
 }

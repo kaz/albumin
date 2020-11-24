@@ -31,6 +31,14 @@ func (m *Model) InitPhoto() error {
 	return nil
 }
 
+func (m *Model) GetPhotos() ([]*Photo, error) {
+	photos := []*Photo{}
+	if err := m.db.Select(&photos, "SELECT * FROM photo"); err != nil {
+		return nil, fmt.Errorf("db.Select: %w", err)
+	}
+	return photos, nil
+}
+
 func (m *Model) UpdatePhoto(p *Photo) error {
 	_, err := m.db.NamedExec(`
 		REPLACE INTO photo VALUES (
