@@ -13,6 +13,7 @@ func main() {
 	e.Use(middleware.Logger())
 
 	apiGroup := e.Group("/api", api.ContentTypeJSON)
+	apiGroup.GET("/scan/pwd", api.GetScanPwd)
 	apiGroup.POST("/scan", api.PostScan)
 
 	e.Logger.Fatal(e.Start(":20000"))

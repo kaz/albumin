@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/kaz/albumin/model"
 	"github.com/kaz/albumin/scan"
@@ -14,6 +15,14 @@ type (
 		Directory string `json:"directory"`
 	}
 )
+
+func GetScanPwd(c echo.Context) error {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("os.Getwd: %w", err)
+	}
+	return c.String(http.StatusOK, pwd)
+}
 
 func PostScan(c echo.Context) error {
 	req := &PostScanRequest{}
