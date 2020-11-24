@@ -12,10 +12,10 @@ import (
 
 type (
 	PostScanRequest struct {
-		Directory string `json:"directory"`
+		Directory string
 	}
 	PostScanResponse struct {
-		Scanned []string `json:"scanned"`
+		Scanned []string
 	}
 )
 
