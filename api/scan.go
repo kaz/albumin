@@ -14,6 +14,9 @@ type (
 	PostScanRequest struct {
 		Directory string `json:"directory"`
 	}
+	PostScanResponse struct {
+		Scanned []string `json:"scanned"`
+	}
 )
 
 func GetScanPwd(c echo.Context) error {
@@ -46,11 +49,13 @@ func PostScan(c echo.Context) error {
 		return fmt.Errorf("Scan: %w", err)
 	}
 
-	for _, ent := range ents {
+	res := &PostScanResponse{Scanned: make([]string, len(ents))}
+	for i, ent := range ents {
 		if err := m.UpdatePhoto(ent); err != nil {
 			return fmt.Errorf("InsertPhoto: %w", err)
 		}
+		res.Scanned[i] = ent.Path
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return c.JSON(http.StatusOK, res)
 }
