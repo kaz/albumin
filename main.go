@@ -12,7 +12,10 @@ func main() {
 	e.Debug = true
 	e.Use(middleware.Logger())
 
+	e.Static("/", "./view")
+
 	apiGroup := e.Group("/api", api.ContentTypeJSON)
+	apiGroup.GET("/file", api.GetFile)
 	apiGroup.DELETE("/photo", api.DeletePhoto, api.SetupModelMiddleware)
 	apiGroup.POST("/photo/scan", api.PostPhotoScan, api.SetupModelMiddleware)
 	apiGroup.GET("/dedup/hash", api.GetDedupHash, api.QueryPhotosMiddleware)

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>albumin</title>
+	<style>
+		.group {
+			display: flex;
+			font-size: .6em;
+		}
+
+		.group p {
+			margin-left: 1em;
+		}
+
+		.group img {
+			width: 10vw;
+		}
+	</style>
+</head>
+
+<body>
+	<p>
+		<label>
+			Path:
+			<input name="scan_path" type="text" size="45">
+		</label>
+		<button id="scan">scan</button>
+	</p>
+	<p>
+		<label>
+			Tolerance:
+			<input name="dedup_tolerance" type="number" size="5" value="10">
+		</label>
+		<br>
+		<button id="dedup_byhash">dedup(hash)</button>
+		<button id="dedup_byphash">dedup(phash)</button>
+	</p>
+	<p>
+		<label>
+			Strategy:
+			<select name="move_strategy">
+				<option>seq</option>
+				<option selected>exif</option>
+			</select>
+		</label>
+		<br>
+		<label>
+			<input name="move_execute" type="checkbox">
+			execute
+		</label>
+		<br>
+		<label>
+			Layout:
+			<input name="move_layout" type="text" size="45" value="./output/2006/2006-01-02_15-04-05.png">
+		</label>
+		<button id="move">move</button>
+	</p>
+
+	<p>
+		Status: <span id="status"></span>
+	</p>
+	<hr>
+
+	<p id="result"></p>
+
+	<script>
+		const result = document.querySelector("#result");
+
+		const status = (st, col) => {
+			const elm = document.querySelector("#status");
+			elm.style.color = col;
+			elm.textContent = st;
+		};
+		const statusStandby = () => status("standby", "green");
+		const statusProcessing = () => status("processing", "orange");
+		const statusSucceeded = () => status("succeeded", "blue");
+		const statusFailed = () => status("failed", "red");
+		statusStandby();
+
+		(async () => {
+			const path = document.querySelector("[name=scan_path]");
+			if (path.value) {
+				return;
+			}
+			const resp = await fetch("/api/move/pwd");
+			path.value = await resp.text();
+		})();
+
+		const executeAPI = async (api, opts) => {
+			statusProcessing();
+
+			const resp = await fetch(api, opts);
+			if (!resp.ok) {
+				statusFailed();
+				const err = new Error(await resp.text());
+				result.textContent = err;
+				throw err;
+			}
+
+			statusSucceeded();
+			return resp.json();
+		};
+
+		document.querySelector("#scan").addEventListener("click", async () => {
+			const resp = await executeAPI("/api/photo/scan", {
+				method: "POST",
+				body: JSON.stringify({
+					Directory: document.querySelector("[name=scan_path]").value,
+				}),
+			});
+			result.innerHTML = `
+				<table border="1">
+					<tr><th>Scanned</th></tr>
+					${resp.Scanned.map(path => `<tr><td>${path}</td></tr>`).join("")}
+				</table>
+			`;
+		});
+
+		const showGroups = groups => {
+			result.innerHTML = groups.map(group => `
+				<div class="group">
+				${group.map(photo => `
+					<p>
+						<button class="delete" data-path="${photo.Path}">delete</button><br>
+						Path: ${photo.Path}<br>
+						Datetime: ${photo.Timestamp}<br>
+						<img src="/api/file?path=${photo.Path}">
+					</p>
+				`).join("")}
+				</div>
+				<hr>
+			`).join("");
+			document.querySelectorAll(".delete").forEach(elm => elm.addEventListener("click", async () => {
+				await executeAPI("/api/photo", {
+					method: "DELETE",
+					body: JSON.stringify({
+						Path: elm.getAttribute("data-path"),
+					}),
+				});
+				elm.replaceWith("deleted!");
+			}));
+		};
+
+		document.querySelector("#dedup_byhash").addEventListener("click", async () => {
+			const resp = await executeAPI("/api/dedup/hash", {});
+			showGroups(resp.Groups);
+		});
+
+		document.querySelector("#dedup_byphash").addEventListener("click", async () => {
+			const resp = await executeAPI(`/api/dedup/phash?tolerance=${document.querySelector("[name=dedup_tolerance]").value}`, {});
+			showGroups(resp.Groups);
+		});
+
+		document.querySelector("#move").addEventListener("click", async () => {
+			const resp = await executeAPI("/api/move", {
+				method: "POST",
+				body: JSON.stringify({
+					Strategy: document.querySelector("[name=move_strategy]").value,
+					Layout: document.querySelector("[name=move_layout]").value,
+					Execute: document.querySelector("[name=move_execute]").checked,
+				}),
+			});
+			result.innerHTML = `
+				<table border="1">
+					<tr>
+						<th>From</th>
+						<th>To</th>
+					</tr>
+					${resp.Moves.map(move => `
+						<tr>
+							<td>${move.From}</td>
+							<td>${move.To}</td>
+						</tr>
+					`).join("")}
+				</table>
+			`;
+		});
+	</script>
+</body>
+
+</html>
