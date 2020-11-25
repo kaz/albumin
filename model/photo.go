@@ -10,6 +10,7 @@ type (
 		Path      string    `db:"path"`
 		Hash      []byte    `db:"hash"`
 		PHash     []byte    `db:"phash"`
+		Deleted   bool      `db:"deleted"`
 		Timestamp time.Time `db:"timestamp"`
 	}
 )
@@ -20,10 +21,10 @@ func (m *Model) InitPhoto() error {
 			path TEXT PRIMARY KEY,
 			hash BLOB,
 			phash BLOB,
+			deleted BOOLEAN,
 			timestamp DATETIME
 		);
-		CREATE INDEX IF NOT EXISTS photo_hash ON photo (hash);
-		CREATE INDEX IF NOT EXISTS photo_phash ON photo (phash);
+		CREATE INDEX IF NOT EXISTS photo_deleted ON photo (deleted);
 	`)
 	if err != nil {
 		return fmt.Errorf("db.Exec: %w", err)
@@ -33,7 +34,7 @@ func (m *Model) InitPhoto() error {
 
 func (m *Model) GetPhotos() ([]*Photo, error) {
 	photos := []*Photo{}
-	if err := m.db.Select(&photos, "SELECT * FROM photo"); err != nil {
+	if err := m.db.Select(&photos, "SELECT * FROM photo WHERE deleted = ?", false); err != nil {
 		return nil, fmt.Errorf("db.Select: %w", err)
 	}
 	return photos, nil
@@ -45,6 +46,7 @@ func (m *Model) UpdatePhoto(p *Photo) error {
 			:path,
 			:hash,
 			:phash,
+			:deleted,
 			:timestamp
 		)
 	`, p)
