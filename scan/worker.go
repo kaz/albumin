@@ -104,7 +104,7 @@ func calcPHash(loader *load.Loader) ([]byte, error) {
 func getTimestamp(loader *load.Loader) (time.Time, error) {
 	t, err := loader.Time()
 	if err != nil {
-		return time.Time{}, fmt.Errorf("goimagehash.PerceptionHash: %w", err)
+		return time.Time{}, fmt.Errorf("loader.Time: %w", err)
 	}
 	return t, nil
 }

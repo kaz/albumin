@@ -49,20 +49,19 @@ func Scan(target string) ([]*model.Photo, error) {
 	errs := []error{}
 	for res := range resCh {
 		if res.errs != nil {
-			fmt.Println("error:", res.target)
-			errs = append(errs, res.errs...)
+			for _, err := range res.errs {
+				errs = append(errs, fmt.Errorf("target=%v: %w", res.target, err))
+			}
 			continue
 		}
 		if res.photo == nil {
-			fmt.Println("skipped:", res.target)
 			continue
 		}
-		fmt.Println("ok:", res.target)
 		photos = append(photos, res.photo)
 	}
 
 	if len(errs) > 0 {
-		return nil, fmt.Errorf("errors occurred in scanning: %v", errs)
+		return nil, fmt.Errorf("in thread: %v", errs)
 	}
 	return photos, nil
 }
