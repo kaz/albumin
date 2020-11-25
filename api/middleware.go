@@ -14,6 +14,21 @@ func ContentTypeJSON(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+func SetupModelMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		m, err := model.Default()
+		if err != nil {
+			return fmt.Errorf("model.Default: %w", err)
+		}
+		if err := m.InitPhoto(); err != nil {
+			return fmt.Errorf("InitPhoto: %w", err)
+		}
+
+		c.Set("model", m)
+		return next(c)
+	}
+}
+
 func QueryPhotosMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		m, err := model.Default()

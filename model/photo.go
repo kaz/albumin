@@ -1,6 +1,8 @@
 package model
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -32,6 +34,15 @@ func (m *Model) InitPhoto() error {
 	return nil
 }
 
+func (m *Model) GetPhotoByPath(path string) (*Photo, error) {
+	photo := &Photo{}
+	if err := m.db.Get(photo, "SELECT * FROM photo WHERE path = ?", path); errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("db.Get: %w", err)
+	}
+	return photo, nil
+}
 func (m *Model) GetPhotos() ([]*Photo, error) {
 	photos := []*Photo{}
 	if err := m.db.Select(&photos, "SELECT * FROM photo WHERE deleted = ?", false); err != nil {

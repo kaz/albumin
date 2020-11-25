@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/kaz/albumin/model"
 	"github.com/kaz/albumin/move"
@@ -20,6 +21,14 @@ type (
 		Executed bool
 	}
 )
+
+func GetMovePwd(c echo.Context) error {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("os.Getwd: %w", err)
+	}
+	return c.String(http.StatusOK, pwd)
+}
 
 func PostMove(c echo.Context) error {
 	req := &PostMoveRequest{}

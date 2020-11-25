@@ -13,10 +13,11 @@ func main() {
 	e.Use(middleware.Logger())
 
 	apiGroup := e.Group("/api", api.ContentTypeJSON)
-	apiGroup.GET("/scan/pwd", api.GetScanPwd)
-	apiGroup.POST("/scan", api.PostScan)
+	apiGroup.DELETE("/photo", api.DeletePhoto, api.SetupModelMiddleware)
+	apiGroup.POST("/photo/scan", api.PostPhotoScan, api.SetupModelMiddleware)
 	apiGroup.GET("/dedup/hash", api.GetDedupHash, api.QueryPhotosMiddleware)
 	apiGroup.GET("/dedup/phash", api.GetDedupPHash, api.QueryPhotosMiddleware)
+	apiGroup.GET("/move/pwd", api.GetMovePwd)
 	apiGroup.POST("/move", api.PostMove, api.QueryPhotosMiddleware)
 
 	e.Logger.Fatal(e.Start(":20000"))
