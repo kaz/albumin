@@ -14,18 +14,24 @@ type (
 )
 
 var (
-	pwd string
+	Pwd string
 )
 
 func init() {
-	pwd, _ = os.Getwd()
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	Pwd = pwd
 }
 
 func resolve(photo *model.Photo, to string) string {
 	if !filepath.IsAbs(to) {
-		to = filepath.Join(pwd, to)
+		to = filepath.Join(Pwd, to)
 	}
-	return strings.Replace(to, ".png", filepath.Ext(photo.Path), 1)
+
+	realExt := strings.ToLower(filepath.Ext(photo.Path))
+	return strings.Replace(to, ".png", realExt, 1)
 }
 
 func StrategyExif(layout string) Strategy {
