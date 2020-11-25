@@ -19,6 +19,7 @@ func main() {
 	apiGroup.GET("/file", api.GetFile)
 	apiGroup.DELETE("/photo", api.DeletePhoto, api.SetupModelMiddleware)
 	apiGroup.POST("/photo/scan", api.PostPhotoScan, api.SetupModelMiddleware)
+	apiGroup.GET("/photo/scan/progress", api.GetPhotoScanProgress)
 	apiGroup.GET("/dedup/hash", api.GetDedupHash, api.QueryPhotosMiddleware)
 	apiGroup.GET("/dedup/phash", api.GetDedupPHash, api.QueryPhotosMiddleware)
 	apiGroup.GET("/move/pwd", api.GetMovePwd)

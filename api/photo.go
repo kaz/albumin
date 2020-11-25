@@ -74,3 +74,7 @@ func PostPhotoScan(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, res)
 }
+
+func GetPhotoScanProgress(c echo.Context) error {
+	return c.String(http.StatusOK, fmt.Sprintf("%.2f %%", 100*scan.GetProgress()))
+}

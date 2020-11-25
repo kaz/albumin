@@ -18,6 +18,17 @@ type (
 	}
 )
 
+var (
+	mu       = &sync.RWMutex{}
+	progress float64
+)
+
+func GetProgress() float64 {
+	mu.RLock()
+	defer mu.RUnlock()
+	return progress
+}
+
 func Scan(target string) ([]*model.Photo, error) {
 	ents, err := walk(target)
 	if err != nil {
@@ -57,7 +68,12 @@ func Scan(target string) ([]*model.Photo, error) {
 		if res.photo == nil {
 			continue
 		}
+
 		photos = append(photos, res.photo)
+
+		mu.Lock()
+		progress = float64(len(photos)) / float64(len(ents))
+		mu.Unlock()
 	}
 
 	if len(errs) > 0 {

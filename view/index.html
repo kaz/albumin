@@ -60,6 +60,7 @@
 
 	<p>
 		Status: <span id="status"></span>
+		<span id="progress"></span>
 	</p>
 	<hr>
 
@@ -85,6 +86,9 @@
 				return;
 			}
 			const resp = await fetch("/api/move/pwd");
+			if (!resp.ok) {
+				return alert(`API Error: ${await resp.text()}`);
+			}
 			path.value = await resp.text();
 		})();
 
@@ -103,13 +107,33 @@
 			return resp.json();
 		};
 
+		const updateProgress = (endpoint) => {
+			const elm = document.querySelector("#progress");
+
+			const timer = setInterval(async () => {
+				const resp = await fetch(endpoint);
+				if (!resp.ok) {
+					return alert(`API Error: ${await resp.text()}`);
+				}
+				elm.textContent = `(${await resp.text()})`;
+			}, 1000);
+
+			return () => {
+				elm.textContent = "";
+				clearInterval(timer);
+			};
+		};
+
 		document.querySelector("#scan").addEventListener("click", async () => {
+			const stopProgress = updateProgress("/api/photo/scan/progress");
+
 			const resp = await executeAPI("/api/photo/scan", {
 				method: "POST",
 				body: JSON.stringify({
 					Directory: document.querySelector("[name=scan_path]").value,
 				}),
-			});
+			}).finally(stopProgress);
+
 			result.innerHTML = `
 				<table border="1">
 					<tr><th>Scanned</th></tr>
