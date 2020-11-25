@@ -33,6 +33,7 @@ func process(target string) (*model.Photo, []error) {
 
 	loader, err := load.Load(target)
 	if errors.Is(err, load.ErrNotSupported) {
+		fmt.Println("ErrNotSupported:", target)
 		return nil, nil
 	} else if err != nil {
 		return nil, []error{fmt.Errorf("load.Load: %w", err)}
@@ -75,7 +76,9 @@ func process(target string) (*model.Photo, []error) {
 
 		var err error
 		photo.ExifTime, err = getTimestamp(loader)
-		if err != nil && !errors.Is(err, load.ErrNoEXIF) {
+		if errors.Is(err, load.ErrNoEXIF) {
+			fmt.Println("ErrNoEXIF:", target)
+		} else if err != nil {
 			mu.Lock()
 			defer mu.Unlock()
 

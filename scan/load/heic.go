@@ -58,7 +58,9 @@ func (l *HeicLoader) Time(data []byte) (time.Time, error) {
 	}
 
 	dt, err := meta.DateTime()
-	if err != nil {
+	if exif.IsTagNotPresentError(err) {
+		return time.Time{}, fmt.Errorf("%w: %v", ErrNoEXIF, err)
+	} else if err != nil {
 		return time.Time{}, fmt.Errorf("DateTime: %w", err)
 	}
 
