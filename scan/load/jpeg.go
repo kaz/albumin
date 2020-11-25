@@ -26,7 +26,7 @@ func (l *JpegLoader) Image(data []byte) (image.Image, error) {
 func (l *JpegLoader) Time(data []byte) (time.Time, error) {
 	meta, err := exif.Decode(bytes.NewReader(data))
 	if err != nil {
-		return time.Time{}, fmt.Errorf("exif.Decode: %w", err)
+		return time.Time{}, fmt.Errorf("%w: %v", ErrNoEXIF, err)
 	}
 
 	dt, err := meta.DateTime()

@@ -36,7 +36,7 @@ func resolve(photo *model.Photo, to string) string {
 
 func StrategyExif(layout string) Strategy {
 	return func(photo *model.Photo) string {
-		return resolve(photo, photo.Timestamp.Format(layout))
+		return resolve(photo, photo.ExifTime.Format(layout))
 	}
 }
 

@@ -24,6 +24,7 @@ type (
 
 var (
 	ErrNotSupported = errors.New("not supported")
+	ErrNoEXIF       = errors.New("no EXIF found")
 )
 
 func Load(file string) (*Loader, error) {

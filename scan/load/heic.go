@@ -2,6 +2,7 @@ package load
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	"time"
@@ -45,8 +46,10 @@ func (l *HeicLoader) Image(data []byte) (image.Image, error) {
 
 func (l *HeicLoader) Time(data []byte) (time.Time, error) {
 	rawExif, err := mediaheif.Open(bytes.NewReader(data)).EXIF()
-	if err != nil {
-		return time.Time{}, fmt.Errorf("mediaheif.Open: %w", err)
+	if errors.Is(err, mediaheif.ErrNoEXIF) {
+		return time.Time{}, fmt.Errorf("%w: %v", ErrNoEXIF, err)
+	} else if err != nil {
+		return time.Time{}, fmt.Errorf("EXIF: %w", err)
 	}
 
 	meta, err := exif.Decode(bytes.NewReader(rawExif))

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/kaz/albumin/model"
@@ -17,6 +18,10 @@ type (
 )
 
 func Plan(photos []*model.Photo, strategy Strategy) ([]*Move, error) {
+	sort.Slice(photos, func(i, j int) bool {
+		return photos[i].Timestamp() < photos[j].Timestamp()
+	})
+
 	result := make([]*Move, 0, len(photos))
 	count := make(map[string]int, len(photos))
 

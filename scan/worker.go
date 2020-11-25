@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -25,6 +26,11 @@ func thread(reqCh chan string, resCh chan result) {
 }
 
 func process(target string) (*model.Photo, []error) {
+	stat, err := os.Stat(target)
+	if err != nil {
+		return nil, []error{fmt.Errorf("os.Stat: %w", err)}
+	}
+
 	loader, err := load.Load(target)
 	if errors.Is(err, load.ErrNotSupported) {
 		return nil, nil
@@ -32,9 +38,13 @@ func process(target string) (*model.Photo, []error) {
 		return nil, []error{fmt.Errorf("load.Load: %w", err)}
 	}
 
-	photo := &model.Photo{Path: target}
-	errs := []error{}
+	photo := &model.Photo{
+		Path:    target,
+		FsTime:  stat.ModTime(),
+		Deleted: false,
+	}
 
+	errs := []error{}
 	mu := &sync.Mutex{}
 	wg := &sync.WaitGroup{}
 
@@ -64,8 +74,8 @@ func process(target string) (*model.Photo, []error) {
 		defer wg.Done()
 
 		var err error
-		photo.Timestamp, err = getTimestamp(loader)
-		if err != nil {
+		photo.ExifTime, err = getTimestamp(loader)
+		if err != nil && !errors.Is(err, load.ErrNoEXIF) {
 			mu.Lock()
 			defer mu.Unlock()
 

@@ -9,13 +9,22 @@ import (
 
 type (
 	Photo struct {
-		Path      string    `db:"path"`
-		Hash      []byte    `db:"hash"`
-		PHash     []byte    `db:"phash"`
-		Deleted   bool      `db:"deleted"`
-		Timestamp time.Time `db:"timestamp"`
+		Path     string    `db:"path"`
+		Hash     []byte    `db:"hash"`
+		PHash    []byte    `db:"phash"`
+		Deleted  bool      `db:"deleted"`
+		FsTime   time.Time `db:"fs_time"`
+		ExifTime time.Time `db:"exif_time"`
 	}
 )
+
+func (p *Photo) Timestamp() int64 {
+	exifTime := p.ExifTime.UnixNano()
+	if exifTime > 0 {
+		return exifTime
+	}
+	return p.FsTime.UnixNano()
+}
 
 func (m *Model) InitPhoto() error {
 	_, err := m.db.Exec(`
@@ -24,7 +33,8 @@ func (m *Model) InitPhoto() error {
 			hash BLOB,
 			phash BLOB,
 			deleted BOOLEAN,
-			timestamp DATETIME
+			fs_time DATETIME,
+			exif_time DATETIME
 		);
 		CREATE INDEX IF NOT EXISTS photo_deleted ON photo (deleted);
 	`)
@@ -58,7 +68,8 @@ func (m *Model) UpdatePhoto(p *Photo) error {
 			:hash,
 			:phash,
 			:deleted,
-			:timestamp
+			:fs_time,
+			:exif_time
 		)
 	`, p)
 	if err != nil {
