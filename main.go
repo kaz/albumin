@@ -1,6 +1,9 @@
 package main
 
 import (
+	"net/http"
+
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/kaz/albumin/api"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -12,8 +15,6 @@ func main() {
 	e.Debug = true
 	e.Use(middleware.Logger())
 
-	e.Static("/", "./view")
-
 	apiGroup := e.Group("/api", api.ContentTypeJSON)
 	apiGroup.GET("/file", api.GetFile)
 	apiGroup.DELETE("/photo", api.DeletePhoto, api.SetupModelMiddleware)
@@ -22,6 +23,9 @@ func main() {
 	apiGroup.GET("/dedup/phash", api.GetDedupPHash, api.QueryPhotosMiddleware)
 	apiGroup.GET("/move/pwd", api.GetMovePwd)
 	apiGroup.POST("/move", api.PostMove, api.QueryPhotosMiddleware)
+
+	view := http.FileServer(rice.MustFindBox("view").HTTPBox())
+	e.GET("/*", echo.WrapHandler(view))
 
 	e.Logger.Fatal(e.Start(":20000"))
 }

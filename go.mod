@@ -3,6 +3,7 @@ module github.com/kaz/albumin
 go 1.15
 
 require (
+	github.com/GeertJohan/go.rice v1.0.0
 	github.com/corona10/goimagehash v1.0.3
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/labstack/echo/v4 v4.1.17
