@@ -62,18 +62,30 @@ func (m *Model) GetPhotos() ([]*Photo, error) {
 }
 
 func (m *Model) ReplacePhotos(photos []*Photo) error {
-	_, err := m.db.NamedExec(`
-		REPLACE INTO photo VALUES (
-			:path,
-			:hash,
-			:phash,
-			:deleted,
-			:fs_time,
-			:exif_time
-		)
-	`, photos)
+	tx, err := m.db.Beginx()
 	if err != nil {
-		return fmt.Errorf("db.NamedExec: %w", err)
+		return fmt.Errorf("db.Beginx: %w", err)
+	}
+	defer tx.Rollback()
+
+	for _, photo := range photos {
+		_, err := tx.NamedExec(`
+			REPLACE INTO photo VALUES (
+				:path,
+				:hash,
+				:phash,
+				:deleted,
+				:fs_time,
+				:exif_time
+			)
+		`, photo)
+		if err != nil {
+			return fmt.Errorf("tx.NamedExec: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx.Commit: %w", err)
 	}
 	return nil
 }
