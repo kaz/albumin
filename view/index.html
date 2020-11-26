@@ -136,8 +136,8 @@
 
 			result.innerHTML = `
 				<table border="1">
-					<tr><th>Scanned</th></tr>
-					${resp.Scanned.map(path => `<tr><td>${path}</td></tr>`).join("")}
+					<tr><th>Photos</th></tr>
+					${resp.Photos.map(photo => `<tr><td>${photo.Path}</td></tr>`).join("")}
 				</table>
 			`;
 		});

@@ -20,7 +20,7 @@ type (
 		Directory string
 	}
 	PostPhotoScanResponse struct {
-		Scanned []string
+		Photos []*model.Photo
 	}
 )
 
@@ -41,8 +41,8 @@ func DeletePhoto(c echo.Context) error {
 	}
 
 	photo.Deleted = true
-	if err := m.UpdatePhoto(photo); err != nil {
-		return fmt.Errorf("UpdatePhoto: %w", err)
+	if err := m.ReplacePhotos([]*model.Photo{photo}); err != nil {
+		return fmt.Errorf("ReplacePhotos: %w", err)
 	}
 
 	return c.JSON(http.StatusOK, &DeletePhotoResponse{Photo: photo})
@@ -57,22 +57,17 @@ func PostPhotoScan(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "`directory` is not specified")
 	}
 
-	ents, err := scan.Scan(req.Directory)
+	photos, err := scan.Scan(req.Directory)
 	if err != nil {
 		return fmt.Errorf("Scan: %w", err)
 	}
 
 	m := c.Get("model").(*model.Model)
-
-	res := &PostPhotoScanResponse{Scanned: make([]string, len(ents))}
-	for i, ent := range ents {
-		if err := m.UpdatePhoto(ent); err != nil {
-			return fmt.Errorf("InsertPhoto: %w", err)
-		}
-		res.Scanned[i] = ent.Path
+	if err := m.ReplacePhotos(photos); err != nil {
+		return fmt.Errorf("ReplacePhotos: %w", err)
 	}
 
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusOK, &PostPhotoScanResponse{Photos: photos})
 }
 
 func GetPhotoScanProgress(c echo.Context) error {

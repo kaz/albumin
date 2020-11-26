@@ -61,7 +61,7 @@ func (m *Model) GetPhotos() ([]*Photo, error) {
 	return photos, nil
 }
 
-func (m *Model) UpdatePhoto(p *Photo) error {
+func (m *Model) ReplacePhotos(photos []*Photo) error {
 	_, err := m.db.NamedExec(`
 		REPLACE INTO photo VALUES (
 			:path,
@@ -71,7 +71,7 @@ func (m *Model) UpdatePhoto(p *Photo) error {
 			:fs_time,
 			:exif_time
 		)
-	`, p)
+	`, photos)
 	if err != nil {
 		return fmt.Errorf("db.NamedExec: %w", err)
 	}
