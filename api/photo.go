@@ -17,7 +17,8 @@ type (
 		Photo *model.Photo
 	}
 	PostPhotoScanRequest struct {
-		Directory string
+		Path        string
+		ProgressKey string
 	}
 	PostPhotoScanResponse struct {
 		Photos []*model.Photo
@@ -53,11 +54,14 @@ func PostPhotoScan(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("Bind: %w", err))
 	}
-	if req.Directory == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "`directory` is not specified")
+	if req.Path == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "`Path` is not specified")
+	}
+	if req.ProgressKey == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "`ProgressKey` is not specified")
 	}
 
-	photos, err := scan.Scan(req.Directory)
+	photos, err := scan.Scan(req.Path, req.ProgressKey)
 	if err != nil {
 		return fmt.Errorf("Scan: %w", err)
 	}
@@ -71,5 +75,5 @@ func PostPhotoScan(c echo.Context) error {
 }
 
 func GetPhotoScanProgress(c echo.Context) error {
-	return c.String(http.StatusOK, fmt.Sprintf("%.2f %%", 100*scan.GetProgress()))
+	return c.String(http.StatusOK, scan.GetProgress(c.QueryParams().Get("key")))
 }

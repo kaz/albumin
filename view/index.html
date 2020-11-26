@@ -125,12 +125,16 @@
 		};
 
 		document.querySelector("#scan").addEventListener("click", async () => {
-			const stopProgress = updateProgress("/api/photo/scan/progress");
+			const path = document.querySelector("[name=scan_path]").value;
+			const progKey = `${new Date().getTime()}-${path}`;
+
+			const stopProgress = updateProgress(`/api/photo/scan/progress?key=${encodeURIComponent(progKey)}`);
 
 			const resp = await executeAPI("/api/photo/scan", {
 				method: "POST",
 				body: JSON.stringify({
-					Directory: document.querySelector("[name=scan_path]").value,
+					Path: path,
+					ProgressKey: progKey,
 				}),
 			}).finally(stopProgress);
 

@@ -16,20 +16,26 @@ type (
 		photo  *model.Photo
 		errs   []error
 	}
+	progress struct {
+		total   int
+		current int
+	}
 )
 
 var (
-	mu       = &sync.RWMutex{}
-	progress float64
+	mu      = &sync.RWMutex{}
+	progMap = map[string]*progress{}
 )
 
-func GetProgress() float64 {
-	mu.RLock()
-	defer mu.RUnlock()
-	return progress
+func GetProgress(key string) string {
+	prog, ok := progMap[key]
+	if !ok {
+		return "preparing"
+	}
+	return fmt.Sprintf("%.2f %%", 100*float64(prog.current)/float64(prog.total))
 }
 
-func Scan(target string) ([]*model.Photo, error) {
+func Scan(target string, progKey string) ([]*model.Photo, error) {
 	ents, err := walk(target)
 	if err != nil {
 		return nil, fmt.Errorf("walk: %w", err)
@@ -56,9 +62,13 @@ func Scan(target string) ([]*model.Photo, error) {
 		close(resCh)
 	}()
 
+	progMap[progKey] = &progress{total: len(ents)}
 	photos := []*model.Photo{}
 	errs := []error{}
+
 	for res := range resCh {
+		progMap[progKey].current++
+
 		if res.errs != nil {
 			for _, err := range res.errs {
 				errs = append(errs, fmt.Errorf("target=%v: %w", res.target, err))
@@ -70,10 +80,6 @@ func Scan(target string) ([]*model.Photo, error) {
 		}
 
 		photos = append(photos, res.photo)
-
-		mu.Lock()
-		progress = float64(len(photos)) / float64(len(ents))
-		mu.Unlock()
 	}
 
 	if len(errs) > 0 {
