@@ -156,14 +156,22 @@
 				</div>
 				<hr>
 			`).join("");
+
 			document.querySelectorAll(".delete").forEach(elm => elm.addEventListener("click", async () => {
+				const path = elm.getAttribute("data-path");
 				await executeAPI("/api/photo", {
 					method: "DELETE",
 					body: JSON.stringify({
-						Path: elm.getAttribute("data-path"),
+						Path: path,
 					}),
 				});
-				elm.replaceWith("deleted!");
+
+				document.querySelectorAll(`[data-path="${path}"]`).forEach(elm => {
+					const deleted = document.createElement("span");
+					deleted.style.color = "red";
+					deleted.textContent = "[deleted]";
+					elm.replaceWith(deleted);
+				});
 			}));
 		};
 

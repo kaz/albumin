@@ -34,7 +34,7 @@ func GroupByPHash(photos []*model.Photo, tolerance int) [][]*model.Photo {
 	groups := make([][]*model.Photo, len(photos))
 	phash := make([]uint64, len(photos))
 	for i := 0; i < len(photos); i++ {
-		groups[i] = make([]*model.Photo, 0)
+		groups[i] = []*model.Photo{photos[i]}
 		phash[i] = binary.LittleEndian.Uint64(photos[i].PHash)
 	}
 
