@@ -16,7 +16,7 @@ func main() {
 	e.Use(middleware.Logger())
 
 	apiGroup := e.Group("/api", api.ContentTypeJSON)
-	apiGroup.GET("/file", api.GetFile)
+	apiGroup.GET("/thumbnail", api.GetThumbnail)
 	apiGroup.DELETE("/photo", api.DeletePhoto, api.SetupModelMiddleware)
 	apiGroup.POST("/photo/scan", api.PostPhotoScan, api.SetupModelMiddleware)
 	apiGroup.GET("/photo/scan/progress", api.GetPhotoScanProgress)

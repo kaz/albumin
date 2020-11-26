@@ -13,10 +13,6 @@
 		.group p {
 			margin-left: 1em;
 		}
-
-		.group img {
-			width: 10vw;
-		}
 	</style>
 </head>
 
@@ -154,7 +150,7 @@
 						<button class="delete" data-path="${photo.Path}">delete</button><br>
 						Path: ${photo.Path}<br>
 						Datetime: ${photo.ExifTime}<br>
-						<img src="/api/file?path=${photo.Path}">
+						<img src="/api/thumbnail?width=300&path=${encodeURIComponent(photo.Path)}">
 					</p>
 				`).join("")}
 				</div>

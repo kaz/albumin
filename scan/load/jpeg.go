@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/jpeg"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/rwcarlsen/goexif/exif"
 )
 
@@ -15,9 +15,9 @@ type (
 )
 
 func (l *JpegLoader) Image(data []byte) (image.Image, error) {
-	img, err := jpeg.Decode(bytes.NewReader(data))
+	img, err := imaging.Decode(bytes.NewReader(data), imaging.AutoOrientation(true))
 	if err != nil {
-		return nil, fmt.Errorf("jpeg.Decode: %w", err)
+		return nil, fmt.Errorf("imaging.Decode: %w", err)
 	}
 
 	return img, nil
