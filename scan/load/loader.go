@@ -31,6 +31,8 @@ func Load(file string) (*Loader, error) {
 	var il ImageLoader
 
 	switch strings.ToLower(filepath.Ext(file)) {
+	case ".png":
+		il = &PngLoader{}
 	case ".jpg":
 		il = &JpegLoader{}
 	case ".jpeg":
