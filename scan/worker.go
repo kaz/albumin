@@ -6,29 +6,29 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/corona10/goimagehash"
 	"github.com/kaz/albumin/model"
 	"github.com/kaz/albumin/scan/load"
+	"golang.org/x/sync/errgroup"
 )
 
 func thread(reqCh chan string, resCh chan result) {
 	for target := range reqCh {
-		photo, errs := process(target)
+		photo, err := process(target)
 		resCh <- result{
 			target: target,
 			photo:  photo,
-			errs:   errs,
+			err:    err,
 		}
 	}
 }
 
-func process(target string) (*model.Photo, []error) {
+func process(target string) (*model.Photo, error) {
 	stat, err := os.Stat(target)
 	if err != nil {
-		return nil, []error{fmt.Errorf("os.Stat: %w", err)}
+		return nil, fmt.Errorf("os.Stat: %w", err)
 	}
 
 	loader, err := load.Load(target)
@@ -36,7 +36,7 @@ func process(target string) (*model.Photo, []error) {
 		fmt.Println("ErrNotSupported:", target)
 		return nil, nil
 	} else if err != nil {
-		return nil, []error{fmt.Errorf("load.Load: %w", err)}
+		return nil, fmt.Errorf("load.Load: %w", err)
 	}
 
 	photo := &model.Photo{
@@ -45,50 +45,33 @@ func process(target string) (*model.Photo, []error) {
 		Deleted: false,
 	}
 
-	errs := []error{}
-	mu := &sync.Mutex{}
-	wg := &sync.WaitGroup{}
+	eg := &errgroup.Group{}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
+	eg.Go(func() error {
 		photo.Hash = calcHash(loader)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
+		return nil
+	})
+	eg.Go(func() error {
 		var err error
 		photo.PHash, err = calcPHash(loader)
 		if err != nil {
-			mu.Lock()
-			defer mu.Unlock()
-
-			errs = append(errs, fmt.Errorf("calcPHash: %w", err))
+			return fmt.Errorf("calcPHash: %w", err)
 		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
+		return nil
+	})
+	eg.Go(func() error {
 		var err error
 		photo.ExifTime, err = getTimestamp(loader)
 		if errors.Is(err, load.ErrNoEXIF) {
 			fmt.Println("ErrNoEXIF:", target)
 		} else if err != nil {
-			mu.Lock()
-			defer mu.Unlock()
-
-			errs = append(errs, fmt.Errorf("getTimestamp: %w", err))
+			return fmt.Errorf("getTimestamp: %w", err)
 		}
-	}()
+		return nil
+	})
 
-	wg.Wait()
-	if len(errs) > 0 {
-		return nil, errs
+	if err := eg.Wait(); err != nil {
+		return nil, fmt.Errorf("target=%v: %w", target, err)
 	}
 	return photo, nil
 }

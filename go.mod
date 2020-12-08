@@ -12,4 +12,5 @@ require (
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/strukturag/libheif v1.9.1
 	go4.org v0.0.0-20200411211856-f5505b9728dd
+	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 )

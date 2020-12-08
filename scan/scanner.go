@@ -14,7 +14,7 @@ type (
 	result struct {
 		target string
 		photo  *model.Photo
-		errs   []error
+		err    error
 	}
 	progress struct {
 		total   int
@@ -64,26 +64,18 @@ func Scan(target string, progKey string) ([]*model.Photo, error) {
 
 	progMap[progKey] = &progress{total: len(ents)}
 	photos := []*model.Photo{}
-	errs := []error{}
 
 	for res := range resCh {
 		progMap[progKey].current++
 
-		if res.errs != nil {
-			for _, err := range res.errs {
-				errs = append(errs, fmt.Errorf("target=%v: %w", res.target, err))
-			}
-			continue
+		if res.err != nil {
+			return nil, res.err
 		}
 		if res.photo == nil {
 			continue
 		}
 
 		photos = append(photos, res.photo)
-	}
-
-	if len(errs) > 0 {
-		return nil, fmt.Errorf("in thread: %v", errs)
 	}
 	return photos, nil
 }
